@@ -1,6 +1,7 @@
 // Models
 const User = require("../models/User");
 const ErrorResponse = require('../utils/errorResponse');
+const SendEmail = require('../utils/sendEmail');
 
 //Register route
 exports.register = async (req, res, next) => {
@@ -55,7 +56,7 @@ exports.login = async (req, res, next) => {
 };
 
 
-exports.forgotpassword = (req, res, next) => {
+exports.forgotpassword = async (req, res, next) => {
   const { email } = req.body;
 
   const user = User.findOne({ eemail });
