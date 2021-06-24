@@ -59,7 +59,7 @@ exports.login = async (req, res, next) => {
 exports.forgotpassword = async (req, res, next) => {
   const { email } = req.body;
 
-  const user = User.findOne({ eemail });
+  const user = User.findOne({ email });
 
   if (!user) {
     return next(new ErrorResponse("Email Could not be sent", 404));
@@ -76,6 +76,23 @@ exports.forgotpassword = async (req, res, next) => {
   <p> Please go to this link to reset your password</p>
   <a href=${resetUrl} clicktraking=off>${resetUrl}</a>
   `;
+
+  try {
+    await SendEmail({
+      to: user.email,
+      subject: "Reset your password request",
+      text: message
+    });
+
+    res.status(200).json({success: true, data:"Email sent."})
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    return next(new ErrorResponse("Email could not be send", 500))
+  }
 };
 
 exports.resetpassword = (req, res, next) => {
