@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 // Models
 const User = require("../models/User");
 const ErrorResponse = require('../utils/errorResponse');
@@ -59,7 +60,7 @@ exports.login = async (req, res, next) => {
 exports.forgotpassword = async (req, res, next) => {
   const { email } = req.body;
 
-  const user = User.findOne({ email });
+  const user = await User.findOne({ email });
 
   if (!user) {
     return next(new ErrorResponse("Email Could not be sent", 404));
@@ -69,7 +70,7 @@ exports.forgotpassword = async (req, res, next) => {
 
   await user.save();
 
-  const resetUrl = `http://localhost:3000/passwordreset/${resetToken}`;
+  const resetUrl = `http://localhost:3000/resetpassword/${resetToken}`;
 
   const message = `
   <h1> You have requested a password reset</h1>
@@ -77,29 +78,58 @@ exports.forgotpassword = async (req, res, next) => {
   <a href=${resetUrl} clicktraking=off>${resetUrl}</a>
   `;
 
+  // try {
+  //   await SendEmail({
+  //     to: user.email,
+  //     subject: "Reset your password request",
+  //     text: message
+  //   });
+  //
+  //   res.status(200).json({success: true, data:"Email sent."})
+  // } catch (error) {
+  //   user.resetPasswordToken = undefined;
+  //   user.resetPasswordExpire = undefined;
+  //
+  //   await user.save();
+  //
+  //   return next(new ErrorResponse("Email could not be send", 500))
+  // }
+  res.status(200).json({
+    success: true,
+    data:"Email sent.",
+    resetUrl
+  })
+};
+
+exports.resetpassword = async (req, res, next) => {
+  const resetPasswordToken = crypto.createHash("sha256").update(req.params.resetToken).digest("hex");
+
   try {
-    await SendEmail({
-      to: user.email,
-      subject: "Reset your password request",
-      text: message
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
     });
 
-    res.status(200).json({success: true, data:"Email sent."})
-  } catch (error) {
+    if (!user) {
+      return next( new ErrorResponse('Invalid Reset Token', 400));
+    }
+
+    user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
     await user.save();
 
-    return next(new ErrorResponse("Email could not be send", 500))
+    res.status(201).json({
+      success: true,
+      data: "Password Reset successful"
+    });
+  } catch (e) {
+    next(e);
   }
 };
 
-exports.resetpassword = (req, res, next) => {
-  res.send("Reset password route");
-};
-
-const sendToken =(user, statusCode, res) => {
+const sendToken = (user, statusCode, res) => {
   const token = user.getSignedToken();
   res.status(statusCode).json({ success: true, token })
 }
