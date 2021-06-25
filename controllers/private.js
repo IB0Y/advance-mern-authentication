@@ -4,3 +4,8 @@ exports.getPrivateData = (req, res, next ) => {
     data: "You got access to private data"
   })
 }
+
+
+// if (!localStorage.getItem("authToken")) {
+//   history.push("/login");
+// }
