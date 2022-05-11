@@ -1,7 +1,7 @@
 # advance-mern-authentication
 ## MERN stack authentication
 ### Clone
-``` git clone ....```
+``` git clone ```
 ### Install 
 ``` git install ```
 ### Start
